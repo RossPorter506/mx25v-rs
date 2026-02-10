@@ -258,42 +258,6 @@ where
         Ok(command[1].into())
     }
 
-    /// Read the configuration register
-    pub fn read_configuration(&mut self) -> Result<ConfigurationRegister, Error<E>> {
-        let mut command: [u8; 3] = [Command::ReadConfig as u8, 0, 0];
-        self.command_transfer(&mut command)?;
-        Ok(ConfigurationRegister {
-            dummmy_cycle: command[1].bit(6),
-            protected_section: command[1].bit(3).into(),
-            power_mode: command[2].bit(1).into(),
-        })
-    }
-
-    /// Write configuration to the configuration register. [`Self::write_enable`] is called internally
-    pub fn write_configuration(
-        &mut self,
-        block_protected: u8,
-        quad_enable: bool,
-        status_write_disable: bool,
-        dummy_cycle: bool,
-        protected_section: ProtectedArea,
-        power_mode: PowerMode,
-    ) -> Result<(), Error<E>> {
-        if block_protected > 0x0F {
-            return Err(Error::Value);
-        }
-        self.prepare_write()?;
-        let mut command: [u8; 4] = [Command::WriteStatus as u8, 0, 0, 0];
-        command[1].set_bit_range(2..6, block_protected);
-        command[1].set_bit(6, quad_enable);
-        command[1].set_bit(7, status_write_disable);
-        command[2].set_bit(3, protected_section.into());
-        command[2].set_bit(6, dummy_cycle);
-        command[3].set_bit(1, power_mode.into());
-        self.command_write(&command)?;
-        Ok(())
-    }
-
     /// Suspend the pogram erase
     pub fn suspend_program_erase(&mut self) -> Result<(), Error<E>> {
         self.command_write(&[Command::ProgramEraseSuspend as u8])
@@ -341,36 +305,6 @@ where
         let mut command = [Command::ReadManufacturerId as u8, dummy, dummy, 0x00, 0, 0];
         self.command_transfer(&mut command)?;
         Ok((ManufacturerId(command[4]), DeviceId(command[5])))
-    }
-
-    /// Enter to access additionnal 8kB of secured memory,
-    /// which is independent of the main array. Note that it cannot be updated once locked down. See [`Self::write_security_register`]
-    pub fn enter_secure_opt(&mut self) -> Result<(), Error<E>> {
-        self.command_write(&[Command::EnterSecureOTP as u8])
-    }
-
-    /// Exit the secured OTP
-    pub fn exit_secure_opt(&mut self) -> Result<(), Error<E>> {
-        self.command_write(&[Command::ExitSecureOTP as u8])
-    }
-
-    /// Read the security register
-    pub fn read_security_register(&mut self) -> Result<SecurityRegister, Error<E>> {
-        let mut command = [Command::ReadSecurityRegister as u8, 0];
-        self.command_transfer(&mut command)?;
-        Ok(SecurityRegister {
-            erase_failed: command[1].bit(6),
-            program_failed: command[1].bit(5),
-            erase_suspended: command[1].bit(3),
-            program_suspended: command[1].bit(2),
-            locked_down: command[1].bit(1),
-            secured_otp: command[1].bit(0),
-        })
-    }
-
-    /// Write the security register, note that this operation is **NON REVERSIBLE**
-    pub fn write_security_register(&mut self) -> Result<(), Error<E>> {
-        self.command_write(&[Command::WriteSecurityRegister as u8])
     }
 
     /// No operation, can terminate a reset enabler
