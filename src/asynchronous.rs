@@ -2,46 +2,54 @@ use crate::{
     command::Command,
     error::Error,
     register::*,
-    {BLOCK64_SIZE, SECTOR_SIZE},
+    {_512K, _1M, _2M, _4M, _8M, _16M, BLOCK64_SIZE, SECTOR_SIZE},
 };
 use bit::BitIndex;
 use embassy_futures::yield_now;
 use embedded_hal::spi::Operation;
 use embedded_hal_async::spi::SpiDevice;
 
-/// Type alias for the AsyncMX25R512F
-pub type AsyncMX25R512F<SPI> = AsyncMX25R<0x00FFFF, SPI>;
+/// Async type alias for the MX25V512 subfamily
+pub type MX25V512<SPI>  = AsyncMX25V<_512K, false, SPI>;
+/// Async type alias for the MX25V5126 subfamily
+pub type MX25V5126<SPI> = AsyncMX25V<_512K, false, SPI>;
+/// Async type alias for the MX25V512F subfamily
+pub type MX25V512F<SPI> = AsyncMX25V<_512K, true, SPI>;
 
-/// Type alias for the AsyncMX25R1035F
-pub type AsyncMX25R1035F<SPI> = AsyncMX25R<0x01FFFF, SPI>;
+/// Type alias for the MX25V1006 subfamily
+pub type AsyncMX25V1006<SPI> = AsyncMX25V<_1M, false, SPI>;
+/// Type alias for the MX25V1035 subfamily
+pub type AsyncMX25V1035<SPI> = AsyncMX25V<_1M, true, SPI>;
 
-/// Type alias for the AsyncMX25R2035F
-pub type AsyncMX25R2035F<SPI> = AsyncMX25R<0x03FFFF, SPI>;
+/// Type alias for the MX25V2006 subfamily
+pub type AsyncMX25V2006<SPI> = AsyncMX25V<_2M, false, SPI>;
+/// Type alias for the MX25V2035 subfamily
+pub type AsyncMX25V2035<SPI> = AsyncMX25V<_2M, true, SPI>;
 
-/// Type alias for the AsyncMX25R4035F
-pub type AsyncMX25R4035F<SPI> = AsyncMX25R<0x07FFFF, SPI>;
+/// Type alias for the MX25V4006 subfamily
+pub type AsyncMX25V4006<SPI> = AsyncMX25V<_4M, false, SPI>;
+/// Type alias for the MX25V4035 subfamily
+pub type AsyncMX25V4035<SPI> = AsyncMX25V<_4M, true, SPI>;
 
-/// Type alias for the AsyncMX25R8035F
-pub type AsyncMX25R8035F<SPI> = AsyncMX25R<0x0FFFFF, SPI>;
+/// Type alias for the MX25V8006 subfamily
+pub type AsyncMX25V8006<SPI> = AsyncMX25V<_8M, false, SPI>;
+/// Type alias for the MX25V8035 subfamily
+pub type AsyncMX25V8035<SPI> = AsyncMX25V<_8M, true, SPI>;
 
-/// Type alias for the AsyncMX25R1635F
-pub type AsyncMX25R1635F<SPI> = AsyncMX25R<0x1FFFFF, SPI>;
-
-/// Type alias for the AsyncMX25R3235F
-pub type AsyncMX25R3235F<SPI> = AsyncMX25R<0x3FFFFF, SPI>;
-
-/// Type alias for the AsyncMX25R6435F
-pub type AsyncMX25R6435F<SPI> = AsyncMX25R<0x7FFFFF, SPI>;
+/// Type alias for the MX25V1606 subfamily
+pub type AsyncMX25V1606<SPI> = AsyncMX25V<_16M, false, SPI>;
+/// Type alias for the MX25V1635 subfamily
+pub type AsyncMX25V1635<SPI> = AsyncMX25V<_16M, true, SPI>;
 
 /// The generic low level AsyncMX25R driver
-pub struct AsyncMX25R<const SIZE: u32, SPI>
+pub struct AsyncMX25V<const SIZE: u32, const QUAD: bool, SPI>
 where
     SPI: SpiDevice,
 {
     spi: SPI,
 }
 
-impl<const SIZE: u32, SPI, E> AsyncMX25R<SIZE, SPI>
+impl<const SIZE: u32, const QUAD: bool, SPI, E> AsyncMX25V<SIZE, QUAD, SPI>
 where
     SPI: SpiDevice<Error = E>,
 {
@@ -277,31 +285,6 @@ where
         })
     }
 
-    /// Write configuration to the configuration register. [`Self::write_enable`] is called internally
-    pub async fn write_configuration(
-        &mut self,
-        block_protected: u8,
-        quad_enable: bool,
-        status_write_disable: bool,
-        dummy_cycle: bool,
-        protected_section: ProtectedArea,
-        power_mode: PowerMode,
-    ) -> Result<(), Error<E>> {
-        if block_protected > 0x0F {
-            return Err(Error::Value);
-        }
-        self.prepare_write().await?;
-        let mut command: [u8; 4] = [Command::WriteStatus as u8, 0, 0, 0];
-        command[1].set_bit_range(2..6, block_protected);
-        command[1].set_bit(6, quad_enable);
-        command[1].set_bit(7, status_write_disable);
-        command[2].set_bit(3, protected_section.into());
-        command[2].set_bit(6, dummy_cycle);
-        command[3].set_bit(1, power_mode.into());
-        self.command_write(&command).await?;
-        Ok(())
-    }
-
     /// Suspend the pogram erase
     pub async fn suspend_program_erase(&mut self) -> Result<(), Error<E>> {
         self.command_write(&[Command::ProgramEraseSuspend as u8])
@@ -371,6 +354,60 @@ where
     }
 }
 
+impl<const SIZE: u32, SPI, E> AsyncMX25V<SIZE, true, SPI>
+where
+    SPI: SpiDevice<Error = E>,
+{
+    /// Write configuration to the configuration register. [`Self::write_enable`] is called internally
+    pub async fn write_configuration(
+        &mut self,
+        block_protected: u8,
+        quad_enable: bool,
+        status_write_disable: bool,
+        dummy_cycle: bool,
+        protected_section: ProtectedArea,
+    ) -> Result<(), Error<E>> {
+        if block_protected > 0x0F {
+            return Err(Error::Value);
+        }
+        self.prepare_write().await?;
+        let mut command: [u8; 3] = [Command::WriteStatus as u8, 0, 0];
+        command[1].set_bit_range(2..6, block_protected);
+        command[1].set_bit(6, quad_enable);
+        command[1].set_bit(7, status_write_disable);
+        command[2].set_bit(3, protected_section.into());
+        command[2].set_bit(6, dummy_cycle);
+        self.command_write(&command).await?;
+        Ok(())
+    }
+}
+
+impl<const SIZE: u32, SPI, E> AsyncMX25V<SIZE, false, SPI>
+where
+    SPI: SpiDevice<Error = E>,
+{
+    /// Write configuration to the configuration register. [`Self::write_enable`] is called internally
+    pub async fn write_configuration(
+        &mut self,
+        block_protected: u8,
+        status_write_disable: bool,
+        dummy_cycle: bool,
+        protected_section: ProtectedArea,
+    ) -> Result<(), Error<E>> {
+        if block_protected > 0x0F {
+            return Err(Error::Value);
+        }
+        self.prepare_write().await?;
+        let mut command: [u8; 3] = [Command::WriteStatus as u8, 0, 0];
+        command[1].set_bit_range(2..6, block_protected);
+        command[1].set_bit(7, status_write_disable);
+        command[2].set_bit(3, protected_section.into());
+        command[2].set_bit(6, dummy_cycle);
+        self.command_write(&command).await?;
+        Ok(())
+    }
+}
+
 /// Implementation of the [`NorFlash`](embedded_storage::nor_flash) trait of the  crate
 mod es {
 
@@ -380,15 +417,15 @@ mod es {
     use embedded_hal_async::spi::SpiDevice;
     use embedded_storage_async::nor_flash::{MultiwriteNorFlash, NorFlash, ReadNorFlash};
 
-    use super::AsyncMX25R;
+    use super::AsyncMX25V;
 
-    impl<const SIZE: u32, SPI: SpiDevice> embedded_storage_async::nor_flash::ErrorType
-        for AsyncMX25R<SIZE, SPI>
+    impl<const SIZE: u32, const QUAD: bool, SPI: SpiDevice> embedded_storage_async::nor_flash::ErrorType
+        for AsyncMX25V<SIZE, QUAD, SPI>
     {
         type Error = Error<SPI::Error>;
     }
 
-    impl<const SIZE: u32, SPI: SpiDevice> ReadNorFlash for AsyncMX25R<SIZE, SPI> {
+    impl<const SIZE: u32, const QUAD: bool, SPI: SpiDevice> ReadNorFlash for AsyncMX25V<SIZE, QUAD, SPI> {
         const READ_SIZE: usize = 1;
 
         async fn read(&mut self, offset: u32, bytes: &mut [u8]) -> Result<(), Self::Error> {
@@ -400,7 +437,7 @@ mod es {
         }
     }
 
-    impl<const SIZE: u32, SPI: SpiDevice> NorFlash for AsyncMX25R<SIZE, SPI> {
+    impl<const SIZE: u32, const QUAD: bool, SPI: SpiDevice> NorFlash for AsyncMX25V<SIZE, QUAD, SPI> {
         const WRITE_SIZE: usize = 1;
         const ERASE_SIZE: usize = SECTOR_SIZE as usize;
 
@@ -449,5 +486,5 @@ mod es {
         }
     }
 
-    impl<const SIZE: u32, SPI: SpiDevice> MultiwriteNorFlash for AsyncMX25R<SIZE, SPI> {}
+    impl<const SIZE: u32, const QUAD: bool, SPI: SpiDevice> MultiwriteNorFlash for AsyncMX25V<SIZE, QUAD, SPI> {}
 }

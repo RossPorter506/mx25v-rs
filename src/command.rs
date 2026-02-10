@@ -1,4 +1,4 @@
-/// Possible commands to send to the MX25R
+/// Possible commands to send to the MX25V
 #[repr(u8)]
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub enum Command {
@@ -15,6 +15,7 @@ pub enum Command {
     BlockErase = 0xD8,
     ChipErase = 0x60,
     ReadSfdp = 0x5A,
+    FactoryModeEnable = 0x41,
     WriteEnable = 0x06,
     WriteDisable = 0x04,
     ReadStatus = 0x05,
@@ -27,8 +28,8 @@ pub enum Command {
     ReadIdentification = 0x9F,
     ReadManufacturerId = 0x90,
     ReadElectronicId = 0xAB,
-    Nop = 0x00,
     ResetEnable = 0x66,
     ResetMemory = 0x99,
+    Nop = 0x00,
     Dummy = 0xFF,
 }
