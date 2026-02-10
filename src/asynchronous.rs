@@ -354,37 +354,6 @@ where
         Ok((ManufacturerId(command[4]), DeviceId(command[5])))
     }
 
-    /// Enter to access additionnal 8kB of secured memory,
-    /// which is independent of the main array. Note that it cannot be updated once locked down. See [`Self::write_security_register`]
-    pub async fn enter_secure_opt(&mut self) -> Result<(), Error<E>> {
-        self.command_write(&[Command::EnterSecureOTP as u8]).await
-    }
-
-    /// Exit the secured OTP
-    pub async fn exit_secure_opt(&mut self) -> Result<(), Error<E>> {
-        self.command_write(&[Command::ExitSecureOTP as u8]).await
-    }
-
-    /// Read the security register
-    pub async fn read_security_register(&mut self) -> Result<SecurityRegister, Error<E>> {
-        let mut command = [Command::ReadSecurityRegister as u8, 0];
-        self.command_transfer(&mut command).await?;
-        Ok(SecurityRegister {
-            erase_failed: command[1].bit(6),
-            program_failed: command[1].bit(5),
-            erase_suspended: command[1].bit(3),
-            program_suspended: command[1].bit(2),
-            locked_down: command[1].bit(1),
-            secured_otp: command[1].bit(0),
-        })
-    }
-
-    /// Write the security register, note that this operation is **NON REVERSIBLE**
-    pub async fn write_security_register(&mut self) -> Result<(), Error<E>> {
-        self.command_write(&[Command::WriteSecurityRegister as u8])
-            .await
-    }
-
     /// No operation, can terminate a reset enabler
     pub async fn nop(&mut self) -> Result<(), Error<E>> {
         self.command_write(&[Command::Nop as u8]).await
