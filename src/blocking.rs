@@ -192,7 +192,7 @@ where
 
     /// Erase a 4kB sector. [`Self::write_enable`] is called internally
     pub fn erase_sector(&mut self, addr: u32) -> Result<(), Error<E>> {
-        if addr % SECTOR_SIZE != 0 {
+        if !addr.is_multiple_of(SECTOR_SIZE) {
             return Err(Error::NotAligned);
         }
         self.prepare_write()?;
@@ -204,7 +204,7 @@ where
 
     /// Erase a 64kB block. [`Self::write_enable`] is called internally
     pub fn erase_block64(&mut self, addr: u32) -> Result<(), Error<E>> {
-        if addr % BLOCK64_SIZE != 0 {
+        if !addr.is_multiple_of(BLOCK64_SIZE) {
             return Err(Error::NotAligned);
         }
         self.prepare_write()?;
@@ -216,7 +216,7 @@ where
 
     /// Erase a 32kB block. [`Self::write_enable`] is called internally
     pub fn erase_block32(&mut self, addr: u32) -> Result<(), Error<E>> {
-        if addr % SECTOR_SIZE != 0 {
+        if !addr.is_multiple_of(SECTOR_SIZE) {
             return Err(Error::NotAligned);
         }
         self.prepare_write()?;
@@ -397,13 +397,13 @@ mod es {
             while from < to {
                 self.wait_wip()?;
                 let addr_diff = to - from;
-                if addr_diff % BLOCK64_SIZE == 0 {
+                if addr_diff.is_multiple_of(BLOCK64_SIZE) {
                     self.erase_block64(from)?;
                     from += BLOCK64_SIZE;
-                } else if addr_diff % BLOCK32_SIZE == 0 {
+                } else if addr_diff.is_multiple_of(BLOCK32_SIZE) {
                     self.erase_block32(from)?;
                     from += BLOCK32_SIZE;
-                } else if addr_diff % SECTOR_SIZE == 0 {
+                } else if addr_diff.is_multiple_of(SECTOR_SIZE) {
                     self.erase_sector(from)?;
                     from += SECTOR_SIZE;
                 } else {

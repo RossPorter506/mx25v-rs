@@ -30,7 +30,7 @@ pub(crate) fn check_erase<E>(capacity: usize, from: u32, to: u32) -> Result<(), 
     if from > to || to > capacity {
         return Err(Error::OutOfBounds);
     }
-    if from % SECTOR_SIZE != 0 || to % SECTOR_SIZE != 0 {
+    if !from.is_multiple_of(SECTOR_SIZE) || !to.is_multiple_of(SECTOR_SIZE) {
         return Err(Error::NotAligned);
     }
     Ok(())
