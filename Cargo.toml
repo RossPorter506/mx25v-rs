@@ -1,13 +1,13 @@
 [package]
-name = "mx25r"
-version = "1.0.0"
+name = "mx25v"
+version = "0.1.0"
 edition = "2021"
-authors = ["xgroleau <xavgroleau@gmail.com>"]
-repository = "https://github.com/xgroleau/mx25r-rs"
+authors = ["rossporter506 <rossporter506@gmail.com>"]
+repository = "https://github.com/rossporter506/mx25v-rs"
 license = "MIT OR Apache-2.0"
-homepage = "https://github.com/xgroleau/mx25r-rs"
-description = "Platform-agnostic Rust driver for the macronix MX25R NOR flash."
-documentation = "https://docs.rs/mx25r"
+homepage = "https://github.com/rossporter506/mx25v-rs"
+description = "Platform-agnostic Rust driver for the macronix MX25V NOR flash."
+documentation = "https://docs.rs/mx25v"
 readme = "README.md"
 keywords = ["nor-flash", "spi", "driver", "embedded-hal-driver"]
 categories = ["embedded", "hardware-support", "no-std"]
