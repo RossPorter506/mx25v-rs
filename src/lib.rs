@@ -35,8 +35,7 @@ pub const BLOCK32_SIZE: u32 = BLOCK64_SIZE / 2;
 pub const SECTOR_SIZE: u32 = 0x1000;
 pub const PAGE_SIZE: u32 = 0x100;
 
-pub(crate) fn check_erase<E>(capacity: usize, from: u32, to: u32) -> Result<(), Error<E>> {
-    let capacity = capacity as u32;
+pub(crate) fn check_erase<E>(capacity: u32, from: u32, to: u32) -> Result<(), Error<E>> {
     if from > to || to > capacity {
         return Err(Error::OutOfBounds);
     }
@@ -46,8 +45,7 @@ pub(crate) fn check_erase<E>(capacity: usize, from: u32, to: u32) -> Result<(), 
     Ok(())
 }
 
-pub(crate) fn check_write<E>(capacity: usize, offset: u32, length: usize) -> Result<(), Error<E>> {
-    let capacity = capacity as u32;
+pub(crate) fn check_write<E>(capacity: u32, offset: u32, length: usize) -> Result<(), Error<E>> {
     let length = length as u32;
     if length > capacity || offset > capacity - length {
         return Err(Error::OutOfBounds);
