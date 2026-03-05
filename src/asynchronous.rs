@@ -1,8 +1,9 @@
 use crate::{
-    command::Command,
-    error::Error,
+    _1M, _2M, _4M, _8M, _16M, _512K, 
+    BLOCK32_SIZE, BLOCK64_SIZE, SECTOR_SIZE, 
+    command::Command, 
+    error::Error, 
     register::*,
-    {_512K, _1M, _2M, _4M, _8M, _16M, BLOCK64_SIZE, SECTOR_SIZE},
 };
 use bit::BitIndex;
 use embassy_futures::yield_now;
@@ -232,7 +233,7 @@ where
 
     /// Erase a 32kB block. [`Self::write_enable`] is called internally
     pub async fn erase_block32(&mut self, addr: u32) -> Result<(), Error<E>> {
-        if !addr.is_multiple_of(SECTOR_SIZE) {
+        if !addr.is_multiple_of(BLOCK32_SIZE) {
             return Err(Error::NotAligned);
         }
         self.prepare_write().await?;
