@@ -53,7 +53,7 @@ impl<const SIZE: u32, const QUAD: bool, SPI, E> AsyncMX25V<SIZE, QUAD, SPI>
 where
     SPI: SpiDevice<Error = E>,
 {
-    pub const CAPACITY: usize = SIZE as usize + 1;
+    pub const CAPACITY: u32 = SIZE + 1;
 
     pub fn new(spi: SPI) -> Self {
         Self { spi }
@@ -399,7 +399,6 @@ where
 
 /// Implementation of the [`NorFlash`](embedded_storage::nor_flash) trait of the  crate
 mod es {
-
     use crate::error::Error;
     use crate::{check_erase, check_write};
     use crate::{BLOCK32_SIZE, BLOCK64_SIZE, PAGE_SIZE, SECTOR_SIZE};
@@ -422,7 +421,8 @@ mod es {
         }
 
         fn capacity(&self) -> usize {
-            Self::CAPACITY
+            // TODO: embedded-storage currently returns a usize which doesn't work for 16-bit or below architectures!
+            Self::CAPACITY.try_into().unwrap_or(usize::MAX)
         }
     }
 
@@ -431,7 +431,7 @@ mod es {
         const ERASE_SIZE: usize = SECTOR_SIZE as usize;
 
         async fn erase(&mut self, mut from: u32, to: u32) -> Result<(), Self::Error> {
-            check_erase(self.capacity(), from, to)?;
+            check_erase(Self::CAPACITY, from, to)?;
 
             while from < to {
                 self.wait_wip().await?;
@@ -453,7 +453,7 @@ mod es {
         }
 
         async fn write(&mut self, mut offset: u32, mut bytes: &[u8]) -> Result<(), Self::Error> {
-            check_write(self.capacity(), offset, bytes.len())?;
+            check_write(Self::CAPACITY, offset, bytes.len())?;
 
             // Write first chunk, taking into account that given addres might
             // point to a location that is not on a page boundary,
