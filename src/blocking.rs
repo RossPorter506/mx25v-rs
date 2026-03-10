@@ -180,23 +180,27 @@ where
         self.write_enable()
     }
 
-    /// Read n bytes from an addresss, note that you should maybe use [`Self::read_fast`] instead
+    /// Read n bytes from an addresss. 
+    /// 
+    /// See also: [`Self::read_fast`], which allows for a higher maximum SPI clock speed but adds a dummy byte.
     pub fn read(&mut self, addr: u32, buff: &mut [u8]) -> Result<(), Error<E>> {
         self.read_base(addr, Command::Read, buff)
     }
 
-    /// Read n bytes quickly from an address
+    /// Read n bytes from an address.
+    /// 
+    /// See also: [`Self::read`], which has a more limited maximum SPI frequency but doesn't send a dummy byte.
     pub fn read_fast(&mut self, addr: u32, buff: &mut [u8]) -> Result<(), Error<E>> {
         self.read_base_dummy(addr, Command::ReadF, buff)
     }
 
-    /// Write n bytes to a page. [`Self::write_enable`] is called internally
+    /// Write n bytes to a page. This method can only clear bits to '0', if any bits need to be set to '1' the region must be erased.
     pub fn write_page(&mut self, addr: u32, buff: &[u8]) -> Result<(), Error<E>> {
         self.prepare_write()?;
         self.write_base(addr, Command::ProgramPage, buff)
     }
 
-    /// Erase a 4kB sector. [`Self::write_enable`] is called internally
+    /// Erase a 4kB sector, setting all bits to '1'.
     pub fn erase_sector(&mut self, addr: u32) -> Result<(), Error<E>> {
         if !addr.is_multiple_of(SECTOR_SIZE) {
             return Err(Error::NotAligned);
@@ -208,7 +212,7 @@ where
         Ok(())
     }
 
-    /// Erase a 64kB block. [`Self::write_enable`] is called internally
+    /// Erase a 64kB block, setting all bits to '1'.
     pub fn erase_block64(&mut self, addr: u32) -> Result<(), Error<E>> {
         if !addr.is_multiple_of(BLOCK64_SIZE) {
             return Err(Error::NotAligned);
@@ -220,7 +224,7 @@ where
         Ok(())
     }
 
-    /// Erase a 32kB block. [`Self::write_enable`] is called internally
+    /// Erase a 32kB block, setting all bits to '1'.
     pub fn erase_block32(&mut self, addr: u32) -> Result<(), Error<E>> {
         if !addr.is_multiple_of(BLOCK32_SIZE) {
             return Err(Error::NotAligned);
@@ -232,7 +236,7 @@ where
         Ok(())
     }
 
-    /// Erase the whole chip. [`Self::write_enable`] is called internally
+    /// Erase the whole chip, setting all bits to '1'.
     pub fn erase_chip(&mut self) -> Result<(), Error<E>> {
         self.prepare_write()?;
         self.command_write(&[Command::ChipErase as u8])?;
@@ -313,17 +317,17 @@ where
         Ok((ManufacturerId(command[4]), DeviceId(command[5])))
     }
 
-    /// No operation, can terminate a reset enabler
+    /// No operation
     pub fn nop(&mut self) -> Result<(), Error<E>> {
         self.command_write(&[Command::Nop as u8])
     }
 
     /// Enable reset, though you shouldn't need this function since it's already handled in the reset operation.
-    pub fn reset_enable(&mut self) -> Result<(), Error<E>> {
+    fn reset_enable(&mut self) -> Result<(), Error<E>> {
         self.command_write(&[Command::ResetEnable as u8])
     }
 
-    /// Reset the chip. [`Self::reset_enable`] is called internally
+    /// Reset the chip.
     pub fn reset(&mut self) -> Result<(), Error<E>> {
         self.reset_enable()?;
         self.command_write(&[Command::ResetMemory as u8])
@@ -334,7 +338,7 @@ impl<const SIZE: u32, SPI, E> MX25V<SIZE, true, SPI>
 where
     SPI: SpiDevice<Error = E>,
 {
-    /// Write configuration to the configuration register. [`Self::write_enable`] is called internally
+    /// Write configuration to the configuration register.
     pub fn configure(
         &mut self,
         block_protected: u8,
@@ -362,7 +366,7 @@ impl<const SIZE: u32, SPI, E> MX25V<SIZE, false, SPI>
 where
     SPI: SpiDevice<Error = E>,
 {
-    /// Write configuration to the configuration register. [`Self::write_enable`] is called internally
+    /// Write configuration to the configuration register.
     pub fn configure(
         &mut self,
         block_protected: u8,
