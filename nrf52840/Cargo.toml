@@ -1,8 +1,8 @@
 [package]
-name = "mx25r-nrf52840"
+name = "mx25v-nrf52840"
 version = "0.0.1"
-authors = [ "xgroleau <xavgroleau@gmail.com>" ]
-edition = "2021"
+authors = [ "RossPorter506" ]
+edition = "2024"
 
 [[test]]
 name = "asynchronous"
@@ -13,7 +13,7 @@ name = "blocking"
 harness = false
 
 [dependencies]
-mx25r = { version = "0", path = "../", features = ["defmt"] }
+mx25v = { version = "0", path = "../", features = ["defmt"] }
 
 embedded-hal = "1"
 embedded-hal-async = "1.0"

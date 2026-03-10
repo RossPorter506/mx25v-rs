@@ -22,14 +22,14 @@ mod tests {
     use embassy_time::Delay;
     use embedded_hal_bus::spi::ExclusiveDevice;
     use embedded_storage_async::nor_flash::{NorFlash, ReadNorFlash};
-    use mx25r::{asynchronous::AsyncMX25R6435F, SECTOR_SIZE};
+    use mx25v::{SECTOR_SIZE, asynchronous::AsyncMX25V1606};
 
     bind_interrupts!(struct Irqs {
         SPIM3 => spim::InterruptHandler<peripherals::SPI3>;
     });
 
     #[init]
-    async fn init() -> AsyncMX25R6435F<ExclusiveDevice<Spim<'static, SPI3>, Output<'static>, Delay>>
+    async fn init() -> AsyncMX25V1606<ExclusiveDevice<Spim<'static, SPI3>, Output<'static>, Delay>>
     {
         let cfg = Config::default();
         let p = embassy_nrf::init(cfg);
@@ -38,12 +38,12 @@ mod tests {
         let spi = Spim::new(p.SPI3, Irqs, p.P0_19, p.P0_21, p.P0_20, spi_config);
         let cs = Output::new(p.P0_17, Level::High, OutputDrive::Standard);
         let spi_dev = ExclusiveDevice::new(spi, cs, Delay).unwrap();
-        AsyncMX25R6435F::new(spi_dev)
+        AsyncMX25V1606::new(spi_dev)
     }
 
     #[test]
     async fn basic(
-        mut memory: AsyncMX25R6435F<ExclusiveDevice<Spim<'static, SPI3>, Output<'static>, Delay>>,
+        mut memory: AsyncMX25V1606<ExclusiveDevice<Spim<'static, SPI3>, Output<'static>, Delay>>,
     ) {
         let mut buff = [0];
         let addr = 0;
@@ -64,7 +64,7 @@ mod tests {
     /// Read multiple bytes in a single call.
     #[test]
     async fn read_multiple_bytes(
-        mut memory: AsyncMX25R6435F<ExclusiveDevice<Spim<'static, SPI3>, Output<'static>, Delay>>,
+        mut memory: AsyncMX25V1606<ExclusiveDevice<Spim<'static, SPI3>, Output<'static>, Delay>>,
     ) {
         const LEN: usize = 16;
         let mut buf = [0u8; LEN];
@@ -82,7 +82,7 @@ mod tests {
     /// Read spanning one sector end into the next (should error if next sector is not erased/written).
     #[test]
     async fn read_across_sector_boundary(
-        mut memory: AsyncMX25R6435F<ExclusiveDevice<Spim<'static, SPI3>, Output<'static>, Delay>>,
+        mut memory: AsyncMX25V1606<ExclusiveDevice<Spim<'static, SPI3>, Output<'static>, Delay>>,
     ) {
         let mut buf = [0u8; 16];
 
@@ -94,7 +94,7 @@ mod tests {
     /// Out-of-bounds reads should error.
     #[test]
     async fn read_out_of_bounds(
-        mut memory: AsyncMX25R6435F<ExclusiveDevice<Spim<'static, SPI3>, Output<'static>, Delay>>,
+        mut memory: AsyncMX25V1606<ExclusiveDevice<Spim<'static, SPI3>, Output<'static>, Delay>>,
     ) {
         let mut buf = [0u8; 16];
         let res = memory.read(0x4000_0000, &mut buf).await;
@@ -104,7 +104,7 @@ mod tests {
     /// Directly exercise the ReadNorFlash trait’s `read` method with an absolute offset.
     #[test]
     async fn direct_trait_read(
-        mut memory: AsyncMX25R6435F<ExclusiveDevice<Spim<'static, SPI3>, Output<'static>, Delay>>,
+        mut memory: AsyncMX25V1606<ExclusiveDevice<Spim<'static, SPI3>, Output<'static>, Delay>>,
     ) {
         let mut buf = [0u8; 4];
 
@@ -118,7 +118,7 @@ mod tests {
     /// Check that `capacity()` returns the expected total size.
     #[test]
     async fn trait_capacity(
-        memory: AsyncMX25R6435F<ExclusiveDevice<Spim<'static, SPI3>, Output<'static>, Delay>>,
+        memory: AsyncMX25V1606<ExclusiveDevice<Spim<'static, SPI3>, Output<'static>, Delay>>,
     ) {
         let cap = memory.capacity();
         defmt::assert_eq!(cap, 8 * 1024 * 1024);
@@ -127,7 +127,7 @@ mod tests {
     /// Write a blob at an arbitrary offset via the `NorFlash` & `NorFlash` traits, then read it back.
     #[test]
     async fn trait_write_read(
-        mut memory: AsyncMX25R6435F<ExclusiveDevice<Spim<'static, SPI3>, Output<'static>, Delay>>,
+        mut memory: AsyncMX25V1606<ExclusiveDevice<Spim<'static, SPI3>, Output<'static>, Delay>>,
     ) {
         // 4 bytes of test data
         const DATA: [u8; 4] = [0xDE, 0xAD, 0xBE, 0xEF];
@@ -147,7 +147,7 @@ mod tests {
     /// then verify before/after.
     #[test]
     async fn trait_erase_range(
-        mut memory: AsyncMX25R6435F<ExclusiveDevice<Spim<'static, SPI3>, Output<'static>, Delay>>,
+        mut memory: AsyncMX25V1606<ExclusiveDevice<Spim<'static, SPI3>, Output<'static>, Delay>>,
     ) {
         const LEN: usize = SECTOR_SIZE as usize + (SECTOR_SIZE / 2) as usize;
         const ERASE: u32 = 2 * SECTOR_SIZE;
